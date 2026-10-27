@@ -1,4 +1,4 @@
-# DentEdge AI — Oral Health Intelligence Platform
+# DentEdge AI  Oral Health Intelligence Platform
 
 Multimodal dental AI platform implementing the *DentEdge AI Production Plan v1.0*:
 
