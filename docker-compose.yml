@@ -1,0 +1,47 @@
+# DentEdge AI — production-style stack. Copy backend/.env.example to .env and fill in the secrets first.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: dentedge
+      POSTGRES_USER: dentedge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dentedge}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U dentedge"], interval: 5s, retries: 10 }
+    restart: unless-stopped
+
+    ports:
+      - "5432:5432"
+
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+
+  api:
+    build: ./backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://dentedge:${POSTGRES_PASSWORD:-dentedge}@db:5432/dentedge
+      REDIS_URL: redis://redis:6379/0
+      UPLOAD_DIR: /data/uploads
+    volumes: [uploads:/data/uploads]
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_started }
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    ports: ["${WEB_PORT:-8080}:8080"]
+    depends_on: [api]
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  uploads:
